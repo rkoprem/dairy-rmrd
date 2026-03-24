@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Dairy RMRD — Cloud</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#0f1117;--bg2:#161922;--bg3:#1e2330;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#f0f2f8;--text2:#8b93a8;--text3:#5a6278;
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,0.12);
+  --green:#10b981;--green-bg:rgba(16,185,129,0.12);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,0.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,0.12);
+  --teal:#06b6d4;--teal-bg:rgba(6,182,212,0.12);
+  --purple:#8b5cf6;--purple-bg:rgba(139,92,246,0.12);
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Noto Sans Tamil',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:36px 32px;width:100%;max-width:380px}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-icon{width:56px;height:56px;background:linear-gradient(135deg,#3b82f6,#06b6d4);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 12px}
+.login-title{font-size:22px;font-weight:700}
+.login-sub{font-size:13px;color:var(--text2);margin-top:4px}
+.login-field{margin-bottom:14px}
+.login-field label{display:block;font-size:12px;color:var(--text2);font-weight:500;margin-bottom:5px}
+.login-err{background:var(--red-bg);border:1px solid rgba(239,68,68,0.3);color:var(--red);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;margin-bottom:12px;display:none}
+.login-err.show{display:block}
+.role-pills{display:flex;gap:8px;margin-bottom:20px}
+.role-pill{flex:1;padding:10px;text-align:center;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s}
+.role-pill.active.manager{background:var(--purple-bg);border-color:rgba(139,92,246,.4);color:var(--purple)}
+.role-pill.active.staff{background:var(--blue-bg);border-color:rgba(59,130,246,.4);color:var(--blue)}
+
+/* SETUP SCREEN */
+.setup-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.setup-box{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px;width:100%;max-width:540px}
+.step{display:flex;gap:14px;margin-bottom:22px;padding:16px;background:var(--bg3);border-radius:var(--radius-sm);border:1px solid var(--border)}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--blue);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body{flex:1}
+.step-title{font-weight:600;font-size:14px;margin-bottom:4px}
+.step-desc{font-size:12px;color:var(--text2);line-height:1.6}
+.step-desc code{background:var(--bg);border:1px solid var(--border2);border-radius:4px;padding:1px 6px;font-family:monospace;font-size:11px;color:var(--amber)}
+.copy-btn{background:var(--amber-bg);border:1px solid rgba(245,158,11,.3);color:var(--amber);border-radius:4px;padding:4px 10px;font-size:11px;cursor:pointer;margin-top:6px;font-family:inherit;font-weight:600}
+.copy-btn:hover{background:var(--amber);color:#000}
+
+/* APP */
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:1100px;margin:0 auto;padding:0 16px}
+.topbar{display:flex;align-items:center;gap:10px;padding:12px 0 10px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+.logo{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#3b82f6,#06b6d4);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.user-chip{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px}
+.user-dot{width:7px;height:7px;border-radius:50%}
+.date-chip{font-size:12px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;margin-left:auto}
+.sync-status{font-size:11px;padding:3px 10px;border-radius:20px}
+.sync-ok{background:var(--green-bg);color:var(--green)}
+.sync-err{background:var(--red-bg);color:var(--red)}
+.sync-ing{background:var(--amber-bg);color:var(--amber)}
+
+/* MAIN TABS */
+.main-tabs{display:flex;gap:4px;margin-bottom:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:4px;flex-wrap:wrap}
+.main-tab{flex:1;min-width:80px;padding:9px 8px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:transparent;transition:all .18s;text-align:center;font-family:inherit}
+.main-tab.active{background:var(--bg3);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.main-tab.morning.active{color:var(--amber)}
+.main-tab.evening.active{color:var(--blue)}
+.main-tab.attend.active{color:var(--green)}
+.main-tab.salary.active{color:var(--purple)}
+.main-tab.settings.active{color:var(--teal)}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* SESSION CONTENT */
+.date-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.date-label{font-size:12px;color:var(--text2)}
+input[type=date],input[type=month]{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius-sm);padding:7px 10px;font-size:13px;font-family:inherit;outline:none}
+input[type=date]:focus,input[type=month]:focus{border-color:var(--blue)}
+.btn-nav{background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:var(--radius-sm);padding:7px 12px;cursor:pointer;font-size:13px;transition:all .15s}
+.btn-nav:hover{background:var(--bg2);color:var(--text)}
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:6px}
+.metric-val{font-size:22px;font-weight:700}
+.mv-blue{color:var(--blue)}.mv-green{color:var(--green)}.mv-amber{color:var(--amber)}.mv-red{color:var(--red)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+.d-blue{background:var(--blue)}.d-green{background:var(--green)}.d-amber{background:var(--amber)}.d-red{background:var(--red)}.d-purple{background:var(--purple)}
+.open-close-row{display:flex;gap:10px;margin-bottom:14px}
+.oc-card{flex:1;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg3)}
+.oc-card.is-open{border-color:rgba(16,185,129,.4);background:var(--green-bg)}
+.oc-card.is-close{border-color:rgba(239,68,68,.4);background:var(--red-bg)}
+.oc-label{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.5px;margin-bottom:4px;text-transform:uppercase}
+.oc-time{font-size:22px;font-weight:700}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;color:var(--text2);font-weight:500}
+input[type=text],input[type=number],input[type=time],input[type=password],select,textarea{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius-sm);padding:8px 10px;font-size:13px;font-family:inherit;outline:none;width:100%;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+select option{background:var(--bg3)}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);cursor:pointer;font-size:13px;font-weight:500;font-family:inherit;transition:all .15s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}
+.btn-amber{background:var(--amber);border-color:var(--amber);color:#000}
+.btn-red{background:var(--red);border-color:var(--red);color:#fff}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-purple{background:var(--purple);border-color:var(--purple);color:#fff}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.veh-list{display:flex;flex-direction:column;gap:6px}
+.veh-item{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);flex-wrap:wrap}
+.veh-name{font-weight:600;font-size:13px;min-width:110px}
+.veh-no{font-size:12px;color:var(--text2);min-width:90px}
+.veh-times{font-size:11px;color:var(--text3);flex:1;display:flex;gap:5px;flex-wrap:wrap}
+.time-chip{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:2px 6px}
+.sp{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.sp-normal{background:var(--green-bg);color:var(--green)}
+.sp-late{background:var(--red-bg);color:var(--red)}
+.sp-fault{background:var(--amber-bg);color:var(--amber)}
+.sp-spare{background:var(--teal-bg);color:var(--teal)}
+.saved-by{font-size:10px;color:var(--text3)}
+.delay-alert{background:var(--amber-bg);border:1px solid rgba(245,158,11,.4);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:10px;display:none}
+.delay-alert.show{display:block}
+.att-table-wrap{overflow-x:auto}
+.att-table{width:100%;border-collapse:collapse;font-size:12px;min-width:700px}
+.att-table th{background:var(--bg3);color:var(--text2);font-weight:600;padding:7px 5px;text-align:center;border:1px solid var(--border);font-size:10px;white-space:nowrap}
+.att-table th.sty{position:sticky;left:0;z-index:2;background:var(--bg3);min-width:120px;text-align:left;padding-left:10px}
+.att-table th.sty2{position:sticky;left:120px;z-index:2;background:var(--bg3);min-width:80px}
+.att-table td{padding:5px 3px;text-align:center;border:1px solid var(--border)}
+.att-table td.sty{position:sticky;left:0;background:var(--bg2);z-index:1;text-align:left;padding-left:10px;font-weight:600;font-size:12px}
+.att-table td.sty2{position:sticky;left:120px;background:var(--bg2);z-index:1}
+.att-input{width:34px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:4px;padding:3px;text-align:center;font-size:11px;font-family:inherit;text-transform:uppercase}
+.att-input:focus{border-color:var(--blue);outline:none}
+.att-p{color:var(--green);font-weight:700}
+.att-a{color:var(--red)}
+.att-hd{color:var(--amber);font-weight:600}
+.shift-m{font-size:10px;color:var(--amber);font-weight:600;background:var(--amber-bg);padding:2px 7px;border-radius:10px}
+.shift-e{font-size:10px;color:var(--blue);font-weight:600;background:var(--blue-bg);padding:2px 7px;border-radius:10px}
+.sal-table{width:100%;border-collapse:collapse;font-size:13px}
+.sal-table th{background:var(--bg3);color:var(--text2);font-weight:600;padding:10px 12px;text-align:left;border:1px solid var(--border)}
+.sal-table td{padding:10px 12px;border:1px solid var(--border)}
+.sal-table tr:nth-child(even) td{background:var(--bg3)}
+.sal-total td{background:var(--green-bg)!important;color:var(--green);font-weight:700;border-top:2px solid var(--green)}
+.money{font-weight:700;color:var(--green)}
+.staff-row{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.export-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 4px;border-top:1px solid var(--border);margin-top:14px}
+.export-label{font-size:12px;color:var(--text3)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:14px}
+.modal-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.empty{text-align:center;padding:28px 0;color:var(--text3);font-size:13px}
+.empty-icon{font-size:28px;margin-bottom:8px}
+.notif{position:fixed;bottom:20px;right:20px;background:var(--green);color:#fff;padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;max-width:280px}
+.notif.show{transform:translateY(0);opacity:1}
+.loading{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.info-box{background:var(--blue-bg);border:1px solid rgba(59,130,246,.3);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--blue);margin-bottom:12px}
+.warn-box{background:var(--amber-bg);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--amber);margin-bottom:12px}
+.sess-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.sess-title{font-size:16px;font-weight:700}
+.sess-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.badge-morning{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.badge-evening{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,130,246,.3)}
+.badge-attend{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,.3)}
+.badge-salary{background:var(--purple-bg);color:var(--purple);border:1px solid rgba(139,92,246,.3)}
+@media(max-width:600px){
+  .form-grid,.form-grid3{grid-template-columns:1fr}
+  .open-close-row{flex-direction:column}
+  .cards-row{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP SCREEN ═══ -->
+<div id="setupScreen" class="setup-wrap">
+<div class="setup-box">
+  <div style="text-align:center;margin-bottom:24px">
+    <div style="width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#06b6d4);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 12px">🥛</div>
+    <div style="font-size:20px;font-weight:700">One-time Setup</div>
+    <div style="font-size:13px;color:var(--text2);margin-top:4px">Google Sheets-ஐ database-ஆக connect பண்ணணும்</div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Google Sheets திற</div>
+      <div class="step-desc">
+        <a href="https://sheets.new" target="_blank" style="color:var(--blue)">sheets.new</a> போய் புதிய Sheet create பண்ணுங்க.<br>
+        Sheet name: <code>Dairy RMRD</code> என்று வையுங்க.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Apps Script திற</div>
+      <div class="step-desc">
+        Sheet-ல் மேலே <code>Extensions</code> → <code>Apps Script</code> click பண்ணுங்க.<br>
+        திறக்கும் editor-ல் உள்ள code-ஐ எல்லாம் delete பண்ணிவிட்டு, கீழே உள்ள "Copy Script" button தட்டி paste பண்ணுங்க.<br>
+        பிறகு 💾 Save (Ctrl+S) பண்ணுங்க.
+      </div>
+      <button class="copy-btn" onclick="copyScript()">📋 Copy Apps Script Code</button>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Deploy பண்ணு</div>
+      <div class="step-desc">
+        Apps Script-ல் <code>Deploy</code> → <code>New deployment</code> click பண்ணுங்க.<br>
+        • Type: <code>Web app</code><br>
+        • Execute as: <code>Me</code><br>
+        • Who has access: <code>Anyone</code><br>
+        <strong style="color:var(--amber)">Authorize</strong> பண்ணி Deploy பண்ணுங்க.<br>
+        கிடைக்கும் <strong style="color:var(--green)">Web app URL</strong>-ஐ copy பண்ணுங்க.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-title">URL paste பண்ணு</div>
+      <div class="step-desc">Copy பண்ணிய URL-ஐ கீழே paste பண்ணி Connect பண்ணுங்க.</div>
+    </div>
+  </div>
+
+  <div class="field" style="margin-top:16px;margin-bottom:10px">
+    <label>Google Apps Script Web App URL</label>
+    <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/...../exec">
+  </div>
+  <div class="warn-box" id="urlError" style="display:none">URL சரியாக இல்ல — script.google.com/macros/s/ என்று start ஆகணும்</div>
+  <button class="btn btn-primary" style="width:100%;padding:12px" onclick="connectSheet()">
+    <span id="connectBtnText">🔗 Connect & Continue</span>
+  </button>
+
+  <div style="text-align:center;margin-top:16px">
+    <button class="btn btn-ghost btn-sm" onclick="skipSetup()">Skip — Offline mode use பண்ண</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div id="loginScreen" class="login-wrap hidden">
+<div class="login-box">
+  <div class="login-logo">
+    <div class="login-logo-icon">🥛</div>
+    <div class="login-title">Dairy RMRD</div>
+    <div class="login-sub">Cloud Connected</div>
+  </div>
+  <div class="role-pills">
+    <div class="role-pill manager active" onclick="selectRole('manager')">👔 Manager</div>
+    <div class="role-pill staff" onclick="selectRole('staff')">👷 Staff</div>
+  </div>
+  <div class="login-err" id="loginErr"></div>
+  <div class="login-field">
+    <label>உங்கள் பெயர்</label>
+    <input type="text" id="loginName" placeholder="பெயர் போடுங்க">
+  </div>
+  <div class="login-field">
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn btn-primary" style="width:100%;padding:12px;margin-top:4px" onclick="doLogin()">
+    <span id="loginBtnText">Login →</span>
+  </button>
+  <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text3)">
+    Default: Manager = <code style="color:var(--amber)">dairy123</code> | Staff = <code style="color:var(--blue)">staff456</code>
+  </div>
+</div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div id="mainApp" class="hidden">
+<div class="app">
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🥛</div>
+    Dairy RMRD
+  </div>
+  <div class="user-chip">
+    <div class="user-dot" id="userDot"></div>
+    <span id="userLabel"></span>
+  </div>
+  <span class="sync-status sync-ok" id="syncStatus">☁️ Cloud</span>
+  <div class="date-chip" id="todayChip"></div>
+  <button class="btn btn-ghost btn-sm" onclick="doLogout()" style="margin-left:4px">Logout</button>
+</div>
+
+<!-- MAIN TABS -->
+<div class="main-tabs" id="mainTabs">
+  <button class="main-tab morning active" onclick="showPanel('morning')">🌅 Morning</button>
+  <button class="main-tab evening" onclick="showPanel('evening')">🌙 Evening</button>
+  <button class="main-tab attend" onclick="showPanel('attend')">👥 Attendance</button>
+  <button class="main-tab salary manager-only" onclick="showPanel('salary')">💰 Salary</button>
+  <button class="main-tab settings manager-only" onclick="showPanel('settings')">⚙️ Settings</button>
+</div>
+
+<!-- MORNING -->
+<div class="panel active" id="panel-morning">
+  <div class="sess-header">
+    <div class="sess-title">Morning Session</div>
+    <span class="sess-badge badge-morning">கலை நேரம்</span>
+  </div>
+  <div id="morning-content"></div>
+</div>
+
+<!-- EVENING -->
+<div class="panel" id="panel-evening">
+  <div class="sess-header">
+    <div class="sess-title">Evening Session</div>
+    <span class="sess-badge badge-evening">மாலை நேரம்</span>
+  </div>
+  <div id="evening-content"></div>
+</div>
+
+<!-- ATTENDANCE -->
+<div class="panel" id="panel-attend">
+  <div class="sess-header">
+    <div class="sess-title">Staff Attendance</div>
+    <span class="sess-badge badge-attend">தினசரி ஆஜர்</span>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot d-green"></span> Month</div>
+    <div class="row-btns" style="margin-bottom:10px">
+      <div class="field" style="min-width:170px"><label>Month</label><input type="month" id="attMonth" onchange="loadAttendance()"></div>
+      <div style="margin-top:14px;display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="prevMonth()">◀</button>
+        <button class="btn btn-ghost btn-sm" onclick="nextMonth()">▶</button>
+      </div>
+    </div>
+    <div class="staff-row" id="staffMgmtRow">
+      <input type="text" id="newStaffName" placeholder="புதிய Staff பெயர்" style="max-width:160px">
+      <button class="btn btn-green btn-sm" onclick="addStaff()">+ Add Staff</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot d-green"></span> Attendance — <span id="attMonthLabel"></span>
+      <span style="margin-left:auto;font-size:10px;color:var(--text3)">P=Present | A=Absent | HD=Half Day</span>
+    </div>
+    <div class="att-table-wrap"><table class="att-table" id="attTable"></table></div>
+  </div>
+  <div class="export-bar">
+    <span class="export-label">Download:</span>
+    <button class="btn btn-purple btn-sm" onclick="exportAttExcel()">📥 Attendance Excel</button>
+  </div>
+</div>
+
+<!-- SALARY (Manager only) -->
+<div class="panel" id="panel-salary">
+  <div class="sess-header">
+    <div class="sess-title">Salary Report</div>
+    <span class="sess-badge badge-salary">₹100 / Shift</span>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot d-purple"></span> Month</div>
+    <div class="field" style="max-width:200px"><label>Month</label><input type="month" id="salMonth" onchange="renderSalary()"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot d-purple"></span> Monthly Salary Summary</div>
+    <table class="sal-table">
+      <thead><tr>
+        <th>Staff</th><th>Morning Shifts</th><th>Morning ₹</th>
+        <th>Evening Shifts</th><th>Evening ₹</th>
+        <th>Total Shifts</th><th>Total Salary</th>
+      </tr></thead>
+      <tbody id="salBody"></tbody>
+      <tfoot id="salFoot"></tfoot>
+    </table>
+  </div>
+  <div class="export-bar">
+    <span class="export-label">Download:</span>
+    <button class="btn btn-purple btn-sm" onclick="exportSalExcel()">📥 Salary Excel</button>
+    <button class="btn btn-green btn-sm" onclick="exportFullExcel()">📥 Full Report Excel</button>
+  </div>
+</div>
+
+<!-- SETTINGS (Manager only) -->
+<div class="panel" id="panel-settings">
+  <div class="sess-header">
+    <div class="sess-title">Settings</div>
+    <span class="sess-badge" style="background:var(--teal-bg);color:var(--teal);border:1px solid rgba(6,182,212,.3)">Manager Only</span>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span> Google Sheet Connection</div>
+    <div class="field" style="margin-bottom:10px">
+      <label>Script URL</label>
+      <input type="text" id="settingsUrl" placeholder="Apps Script URL">
+    </div>
+    <div class="row-btns">
+      <button class="btn btn-primary btn-sm" onclick="updateUrl()">Update URL</button>
+      <button class="btn btn-ghost btn-sm" onclick="testConnection()">Test Connection</button>
+    </div>
+    <div id="connTestResult" style="margin-top:10px;font-size:12px"></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="dot d-amber"></span> Password Information</div>
+    <div class="info-box">
+      Password மாற்ற Apps Script code-ல் PASSWORDS object edit பண்ணுங்க.<br>
+      Manager: <code style="color:var(--amber)">dairy123</code> → உங்கள் password போடுங்க<br>
+      Staff: <code style="color:var(--blue)">staff456</code> → உங்கள் password போடுங்க
+    </div>
+  </div>
+
+  <!-- ROUTE MASTER -->
+  <div class="card">
+    <div class="card-title"><span class="dot" style="background:var(--teal)"></span> 🛣️ Route Master</div>
+    <div class="info-box" style="margin-bottom:10px">Route பெயர்கள் இங்க add பண்ணுங்க — Vehicle entry-ல் dropdown-ல் வரும்</div>
+    <div class="staff-row">
+      <input type="text" id="newRouteName" placeholder="Route பெயர் (eg: வல்லம்படுகை)" style="max-width:200px">
+      <button class="btn btn-green btn-sm" onclick="addRoute()">+ Add Route</button>
+    </div>
+    <div id="routeList" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"></div>
+  </div>
+
+  <!-- VEHICLE MASTER -->
+  <div class="card">
+    <div class="card-title"><span class="dot d-blue"></span> 🚛 Vehicle Master</div>
+    <div class="info-box" style="margin-bottom:10px">Vehicle number-களை இங்க add பண்ணுங்க — Vehicle entry-ல் dropdown-ல் வரும்</div>
+    <div class="staff-row">
+      <input type="text" id="newVehNo" placeholder="Vehicle No (eg: TN 39 AB 1234)" style="max-width:220px">
+      <button class="btn btn-green btn-sm" onclick="addVehMaster()">+ Add Vehicle</button>
+    </div>
+    <div id="vehMasterList" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"></div>
+  </div>
+</div>
+
+</div><!-- .app -->
+</div><!-- #mainApp -->
+
+<!-- VEHICLE MODAL -->
+<div class="modal-overlay" id="vehModal">
+<div class="modal">
+  <div class="modal-title" id="vehModalTitle">Vehicle Entry</div>
+  <div id="vehSyncNote" class="info-box hidden">☁️ Saving to Google Sheets...</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Vehicle Name / Route</label>
+      <select id="m_name" onchange="onRouteSelect()">
+        <option value="">-- Route Select பண்ணுங்க --</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Vehicle Number</label>
+      <select id="m_no">
+        <option value="">-- Vehicle No Select பண்ணுங்க --</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-grid3">
+    <div class="field"><label>Expected Time</label><input type="time" id="m_exp"></div>
+    <div class="field"><label>Arrival IN</label><input type="time" id="m_in"></div>
+    <div class="field"><label>Time OUT</label><input type="time" id="m_out"></div>
+  </div>
+  <div class="form-grid3">
+    <div class="field"><label>Milk (L)</label><input type="number" id="m_milk" min="0" placeholder="0"></div>
+    <div class="field"><label>Spoilage (L)</label><input type="number" id="m_spoil" min="0" placeholder="0"></div>
+    <div class="field"><label>Status</label>
+      <select id="m_status" onchange="toggleSpare()">
+        <option value="normal">Normal</option>
+        <option value="late">Late</option>
+        <option value="fault">Fault</option>
+        <option value="spare">Spare Vehicle</option>
+      </select>
+    </div>
+  </div>
+  <div id="spareFields" class="hidden">
+    <div class="form-grid">
+      <div class="field"><label>Spare Vehicle Name</label><input type="text" id="m_spare_name"></div>
+      <div class="field"><label>Spare Vehicle No</label><input type="text" id="m_spare_no"></div>
+    </div>
+  </div>
+  <div class="field" style="margin-bottom:8px"><label>Notes</label><input type="text" id="m_notes" placeholder="Fault details..."></div>
+  <input type="hidden" id="m_id">
+  <div class="modal-btns">
+    <button class="btn btn-primary" id="saveVehBtn" onclick="saveVehicle()">💾 Save</button>
+    <button class="btn btn-ghost btn-sm" onclick="markNow()">⏱ IN Now</button>
+    <button class="btn btn-ghost" onclick="closeVehModal()">Cancel</button>
+  </div>
+</div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════════════════
+let API_URL = localStorage.getItem('dairy_api_url') || '';
+let currentUser = null; // { name, role }
+let staffList = [];
+let attCache = {}; // month => [{staff,shift,days}]
+let vehicleCache = {}; // "date-session" => [vehicles]
+let dairyTimeCache = {}; // "date-session" => {open,close}
+let currentSession = { morning: todayStr(), evening: todayStr() };
+let editVehId = null;
+let editVehSess = '';
+let editVehDate = '';
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function nowTime(){ const d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function timeDiff(t1,t2){ if(!t1||!t2)return null; const[h1,m1]=t1.split(':').map(Number); const[h2,m2]=t2.split(':').map(Number); return(h2*60+m2)-(h1*60+m1); }
+function formatRs(n){ return '₹'+(n||0).toLocaleString('en-IN'); }
+function notify(msg,color='var(--green)'){ const el=document.getElementById('notif'); el.textContent=msg; el.style.background=color; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2500); }
+document.getElementById('todayChip').textContent = new Date().toLocaleDateString('ta-IN',{weekday:'short',year:'numeric',month:'long',day:'numeric'});
+const nowMonth = new Date().toISOString().slice(0,7);
+document.getElementById('attMonth').value = nowMonth;
+document.getElementById('salMonth').value = nowMonth;
+
+// ═══════════════════════════════════════════════════════════
+// SETUP & CONNECTION
+// ═══════════════════════════════════════════════════════════
+// Check if already set up
+window.addEventListener('DOMContentLoaded', () => {
+  if (API_URL) {
+    document.getElementById('setupScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('settingsUrl').value = API_URL;
+  }
+});
+
+async function connectSheet(){
+  const url = document.getElementById('scriptUrl').value.trim();
+  if (!url.includes('script.google.com/macros/s/')) {
+    document.getElementById('urlError').style.display = 'block'; return;
+  }
+  document.getElementById('urlError').style.display = 'none';
+  document.getElementById('connectBtnText').innerHTML = '<span class="loading"></span>Testing...';
+  try {
+    // Use GET — no CORS issue
+    const res = await fetchWithTimeout(url + '?action=ping&payload=%7B%7D', { method: 'GET' }, 8000);
+    const data = await res.json();
+    if (data.ok) {
+      API_URL = url;
+      try { localStorage.setItem('dairy_api_url', url); } catch(e) {}
+      document.getElementById('setupScreen').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      notify('Connected to Google Sheets! ✓');
+    } else throw new Error('Bad response');
+  } catch(e) {
+    document.getElementById('connectBtnText').textContent = '🔗 Connect & Continue';
+    notify('Connection failed — URL சரியா? பின்னாடி /exec இருக்கா?', 'var(--red)');
+  }
+}
+
+function skipSetup(){
+  API_URL = '';
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════
+// API CALL — GET for reads, POST for writes (CORS fix)
+// ═══════════════════════════════════════════════════════════
+const READ_ACTIONS = new Set(['getVehicles','getDairyTime','getAttendance','getStaff','ping']);
+
+async function fetchWithTimeout(url, options={}, ms=8000){
+  const ctrl = new AbortController();
+  const tid = setTimeout(()=>ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, {...options, signal: ctrl.signal});
+    clearTimeout(tid);
+    return res;
+  } catch(e) {
+    clearTimeout(tid);
+    throw e;
+  }
+}
+
+async function api(action, payload={}){
+  if (!API_URL) return offlineApi(action, payload);
+  setSyncStatus('ing');
+  try {
+    let data;
+    if (READ_ACTIONS.has(action)) {
+      // GET request — no CORS issue with Apps Script
+      const params = new URLSearchParams({
+        action,
+        payload: encodeURIComponent(JSON.stringify(payload))
+      });
+      const res = await fetchWithTimeout(`${API_URL}?${params}`, { method:'GET' }, 8000);
+      data = await res.json();
+    } else if (action === 'login') {
+      // Login via GET too (simpler)
+      const params = new URLSearchParams({
+        action: 'ping',
+        payload: encodeURIComponent('{}')
+      });
+      try {
+        // Verify API is alive (5s timeout)
+        const res = await fetchWithTimeout(`${API_URL}?${params}`, { method:'GET' }, 5000);
+        const ping = await res.json();
+        if (!ping.ok) throw new Error('API not reachable');
+      } catch(e) {
+        // API unreachable — allow offline login
+        setSyncStatus('err');
+      }
+      // Auth done locally
+      const pw = { 'dairy123': 'manager', 'staff456': 'staff' };
+      const role = pw[payload.password];
+      if (!role) throw new Error('தவறான password');
+      setSyncStatus('ok');
+      return { role, name: payload.username };
+    } else {
+      // POST for all write actions — use GET to avoid CORS (Apps Script now supports GET writes)
+      const params = new URLSearchParams({
+        action,
+        payload: encodeURIComponent(JSON.stringify(payload))
+      });
+      const res = await fetchWithTimeout(`${API_URL}?${params}`, { method:'GET' }, 10000);
+      data = await res.json();
+    }
+    setSyncStatus('ok');
+    if (!data.ok) throw new Error(data.error || 'API error');
+    return data.data;
+  } catch(e) {
+    setSyncStatus('err');
+    return offlineApi(action, payload);
+  }
+}
+
+function setSyncStatus(state){
+  const el = document.getElementById('syncStatus');
+  if (!API_URL){ el.textContent='📴 Offline'; el.className='sync-status sync-err'; return; }
+  if (state==='ok'){  el.textContent='☁️ Cloud'; el.className='sync-status sync-ok'; }
+  if (state==='err'){ el.textContent='⚠️ Offline'; el.className='sync-status sync-err'; }
+  if (state==='ing'){ el.textContent='🔄 Syncing...'; el.className='sync-status sync-ing'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// OFFLINE FALLBACK (localStorage)
+// ═══════════════════════════════════════════════════════════
+let offStore = {};
+try { offStore = JSON.parse(localStorage.getItem('dairy_off')||'{}'); } catch(e){}
+function saveOff(){ localStorage.setItem('dairy_off', JSON.stringify(offStore)); }
+
+function offlineApi(action, payload){
+  switch(action){
+    case 'login': {
+      const pw = {'dairy123':'manager','staff456':'staff'};
+      const role = pw[payload.password];
+      if(!role) throw new Error('தவறான password');
+      return { role, name: payload.username };
+    }
+    case 'getStaff': return offStore.staff||['Rajan','Murugan','Selvi','Priya','Kannan'];
+    case 'addStaff': {
+      if(!offStore.staff) offStore.staff=['Rajan','Murugan','Selvi','Priya','Kannan'];
+      offStore.staff.push(payload.name); saveOff(); return {added:true};
+    }
+    case 'removeStaff': {
+      offStore.staff=(offStore.staff||[]).filter(s=>s!==payload.name); saveOff(); return {removed:true};
+    }
+    case 'saveVehicle': {
+      const key=payload.date+'-'+payload.session;
+      if(!offStore.vehicles) offStore.vehicles={};
+      if(!offStore.vehicles[key]) offStore.vehicles[key]=[];
+      const id = payload.vehicle.id||Date.now().toString();
+      const idx = offStore.vehicles[key].findIndex(v=>v.id===id);
+      const v = {...payload.vehicle, id, savedBy:payload.savedBy};
+      if(idx>=0) offStore.vehicles[key][idx]=v; else offStore.vehicles[key].push(v);
+      saveOff(); return {id};
+    }
+    case 'getVehicles': {
+      const key=payload.date+'-'+payload.session;
+      return (offStore.vehicles||{})[key]||[];
+    }
+    case 'deleteVehicle': {
+      Object.keys((offStore.vehicles||{})).forEach(k=>{
+        offStore.vehicles[k]=(offStore.vehicles[k]||[]).filter(v=>v.id!==payload.id);
+      }); saveOff(); return {deleted:true};
+    }
+    case 'setDairyTime': {
+      if(!offStore.dairyTimes) offStore.dairyTimes={};
+      const k=payload.date+'-'+payload.session;
+      if(!offStore.dairyTimes[k]) offStore.dairyTimes[k]={open:null,close:null};
+      offStore.dairyTimes[k][payload.type]=payload.time; saveOff(); return {saved:true};
+    }
+    case 'getDairyTime': {
+      const k=payload.date+'-'+payload.session;
+      return (offStore.dairyTimes||{})[k]||{open:null,close:null};
+    }
+    case 'setAttendance': {
+      if(!offStore.attendance) offStore.attendance={};
+      const k=payload.month+'-'+payload.staff+'-'+payload.shift;
+      if(!offStore.attendance[k]) offStore.attendance[k]={};
+      if(!payload.value) delete offStore.attendance[k][payload.day];
+      else offStore.attendance[k][payload.day]=payload.value;
+      saveOff(); return {saved:true};
+    }
+    case 'getAttendance': {
+      const result=[];
+      const staffL = offStore.staff||['Rajan','Murugan','Selvi','Priya','Kannan'];
+      staffL.forEach(staff=>{
+        ['morning','evening'].forEach(shift=>{
+          const k=payload.month+'-'+staff+'-'+shift;
+          result.push({staff,shift,days:(offStore.attendance||{})[k]||{}});
+        });
+      });
+      return result;
+    }
+    case 'getRouteMaster': {
+      try { return JSON.parse(localStorage.getItem('dairy_routes')||'[]'); } catch(e){ return []; }
+    }
+    case 'getVehMaster': {
+      try { return JSON.parse(localStorage.getItem('dairy_vehs')||'[]'); } catch(e){ return []; }
+    }
+    case 'addRoute': {
+      let r=[]; try{ r=JSON.parse(localStorage.getItem('dairy_routes')||'[]'); }catch(e){}
+      if(!r.includes(payload.name)){ r.push(payload.name); localStorage.setItem('dairy_routes',JSON.stringify(r)); }
+      return {added:true};
+    }
+    case 'removeRouteIdx': {
+      let r=[]; try{ r=JSON.parse(localStorage.getItem('dairy_routes')||'[]'); }catch(e){}
+      r.splice(payload.idx,1); localStorage.setItem('dairy_routes',JSON.stringify(r)); return {removed:true};
+    }
+    case 'addVehMaster': {
+      let v=[]; try{ v=JSON.parse(localStorage.getItem('dairy_vehs')||'[]'); }catch(e){}
+      if(!v.includes(payload.no)){ v.push(payload.no); localStorage.setItem('dairy_vehs',JSON.stringify(v)); }
+      return {added:true};
+    }
+    case 'removeVehMasterIdx': {
+      let v=[]; try{ v=JSON.parse(localStorage.getItem('dairy_vehs')||'[]'); }catch(e){}
+      v.splice(payload.idx,1); localStorage.setItem('dairy_vehs',JSON.stringify(v)); return {removed:true};
+    }
+    default: return {};
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+let selectedRole = 'manager';
+function selectRole(r){
+  selectedRole=r;
+  document.querySelectorAll('.role-pill').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.role-pill.'+r).classList.add('active');
+}
+
+async function doLogin(){
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!name){ notify('பெயர் போடுங்க','var(--amber)'); return; }
+  if(!pass){ notify('Password போடுங்க','var(--amber)'); return; }
+  document.getElementById('loginBtnText').innerHTML='<span class="loading"></span>...';
+  try {
+    const result = await api('login', { username:name, password:pass });
+    currentUser = { name, role: result.role };
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('userLabel').textContent = name + (result.role==='manager'?' 👔':' 👷');
+    document.getElementById('userDot').style.background = result.role==='manager'?'var(--purple)':'var(--blue)';
+    // Hide manager-only items for staff
+    if(result.role==='staff'){
+      document.querySelectorAll('.manager-only').forEach(el=>el.classList.add('hidden'));
+    }
+    await initApp();
+  } catch(e) {
+    document.getElementById('loginErr').textContent = e.message;
+    document.getElementById('loginErr').classList.add('show');
+  }
+  document.getElementById('loginBtnText').textContent = 'Login →';
+}
+
+function doLogout(){
+  currentUser=null;
+  vehicleCache={}; dairyTimeCache={}; attCache={};
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginErr').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+async function initApp(){
+  loadMasters();
+  staffList = await api('getStaff',{});
+  renderSession('morning');
+  renderSession('evening');
+  renderAttendance();
+  renderSalary();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SESSION RENDER
+// ═══════════════════════════════════════════════════════════
+async function renderSession(sess){
+  const date = currentSession[sess];
+  const cacheKey = date+'-'+sess;
+  const container = document.getElementById(sess+'-content');
+
+  // Render immediately with cached/offline data — no spinner wait
+  let vehicles = vehicleCache[cacheKey] || offlineApi('getVehicles',{date,session:sess});
+  let times = dairyTimeCache[cacheKey] || offlineApi('getDairyTime',{date,session:sess});
+  vehicleCache[cacheKey] = vehicles;
+  dairyTimeCache[cacheKey] = times;
+  _renderSessionHTML(sess, date, vehicles, times, container);
+
+  // Fetch from cloud in background (non-blocking) — refresh when done
+  if (API_URL) {
+    try {
+      const tout = ms => new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
+      const [freshVeh, freshTimes] = await Promise.all([
+        Promise.race([api('getVehicles',{date,session:sess}), tout(8000)]),
+        Promise.race([api('getDairyTime',{date,session:sess}), tout(8000)])
+      ]);
+      vehicleCache[cacheKey] = freshVeh;
+      dairyTimeCache[cacheKey] = freshTimes;
+      _renderSessionHTML(sess, date, freshVeh, freshTimes, container);
+    } catch(e) { setSyncStatus('err'); }
+  }
+}
+
+function _renderSessionHTML(sess, date, vehicles, times, container){
+
+  const totalMilk = vehicles.reduce((s,v)=>s+Number(v.milk||0),0);
+  const totalSpoil = vehicles.reduce((s,v)=>s+Number(v.spoil||0),0);
+  const doneCount = vehicles.filter(v=>v.timeOut).length;
+  const nowT = nowTime();
+  const lateVeh = vehicles.find(v=>v.expected&&!v.timeIn&&v.expected<nowT);
+  const canEdit = currentUser && (currentUser.role==='manager' || true); // staff can add vehicles
+
+  container.innerHTML = `
+    <div class="date-row">
+      <span class="date-label">தேதி:</span>
+      <button class="btn-nav" onclick="chDate('${sess}',-1)">◀</button>
+      <input type="date" value="${date}" onchange="setDate('${sess}',this.value)">
+      <button class="btn-nav" onclick="chDate('${sess}',1)">▶</button>
+      <button class="btn btn-ghost btn-sm" onclick="setDate('${sess}','${todayStr()}')">Today</button>
+    </div>
+    <div class="cards-row">
+      <div class="metric-card"><div class="metric-label">Total Milk</div><div class="metric-val mv-blue">${totalMilk.toFixed(1)}L</div></div>
+      <div class="metric-card"><div class="metric-label">Spoilage</div><div class="metric-val mv-amber">${totalSpoil.toFixed(1)}L</div></div>
+      <div class="metric-card"><div class="metric-label">Net Milk</div><div class="metric-val mv-green">${(totalMilk-totalSpoil).toFixed(1)}L</div></div>
+      <div class="metric-card"><div class="metric-label">Vehicles</div><div class="metric-val">${doneCount}/${vehicles.length}</div></div>
+    </div>
+    <div class="delay-alert ${lateVeh?'show':''}" id="delayAlert_${sess}">
+      ⚠️ <strong>${lateVeh?lateVeh.name:''}</strong> தாமதம் — Expected: ${lateVeh?lateVeh.expected:''} | இப்போது: ${nowT}
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot d-amber"></span> Dairy Open / Close</div>
+      <div class="open-close-row">
+        <div class="oc-card ${times.open?'is-open':''}">
+          <div class="oc-label">Open Time</div>
+          <div class="oc-time">${times.open||'--:--'}</div>
+        </div>
+        <div class="oc-card ${times.close?'is-close':''}">
+          <div class="oc-label">Close Time</div>
+          <div class="oc-time">${times.close||'--:--'}</div>
+        </div>
+      </div>
+      <div class="row-btns">
+        <button class="btn btn-green btn-sm" onclick="setOC('${sess}','${date}','open')">Mark Open Now</button>
+        <button class="btn btn-red btn-sm" onclick="setOC('${sess}','${date}','close')">Mark Closed Now</button>
+        <input type="time" id="manT_${sess}" style="max-width:110px">
+        <button class="btn btn-ghost btn-sm" onclick="setManOC('${sess}','${date}')">Manual Set</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="dot d-blue"></span> Vehicles — ${date}</div>
+      ${vehicles.length===0?`<div class="empty"><div class="empty-icon">🚛</div>No vehicles yet</div>`:`
+      <div class="veh-list">
+        ${vehicles.map(v=>{
+          const delay=timeDiff(v.expected,v.timeIn);
+          return `<div class="veh-item">
+            <div class="veh-name">${v.name||'—'}</div>
+            <div class="veh-no">${v.no||'—'}</div>
+            <div class="veh-times">
+              ${v.expected?`<span class="time-chip">Exp:${v.expected}</span>`:''}
+              ${v.timeIn?`<span class="time-chip">IN:${v.timeIn}</span>`:''}
+              ${v.timeOut?`<span class="time-chip">OUT:${v.timeOut}</span>`:''}
+              ${v.milk?`<span class="time-chip">${v.milk}L</span>`:''}
+              ${v.spoil?`<span class="time-chip">S:${v.spoil}L</span>`:''}
+              ${delay!=null?`<span class="time-chip" style="color:${delay>0?'var(--red)':'var(--green)'}">⏱${delay>0?'+':''}${delay}m</span>`:''}
+            </div>
+            <span class="sp sp-${v.status||'normal'}">${{normal:'Normal',late:'Late',fault:'Fault',spare:'Spare'}[v.status||'normal']}</span>
+            ${v.savedBy?`<span class="saved-by">by ${v.savedBy}</span>`:''}
+            <div style="display:flex;gap:4px">
+              <button class="btn btn-ghost btn-sm" onclick="openEdit('${sess}','${date}','${v.id}')">✏️</button>
+              ${currentUser&&currentUser.role==='manager'?`<button class="btn btn-ghost btn-sm" onclick="delVeh('${v.id}','${sess}','${date}')">🗑</button>`:''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`}
+      <div style="margin-top:10px">
+        <button class="btn btn-primary btn-sm" onclick="openAdd('${sess}','${date}')">+ Add Vehicle</button>
+      </div>
+    </div>
+    <div class="export-bar">
+      <span class="export-label">Download:</span>
+      <button class="btn btn-purple btn-sm" onclick="exportDayXL('${sess}','${date}')">📥 Day Excel</button>
+      ${currentUser&&currentUser.role==='manager'?`<button class="btn btn-ghost btn-sm" onclick="exportMonthXL('${sess}','${date.slice(0,7)}')">📥 Month Excel</button>`:''}
+    </div>`;
+}
+
+function setDate(sess,val){ currentSession[sess]=val; renderSession(sess); }
+function chDate(sess,d){ const c=new Date(currentSession[sess]); c.setDate(c.getDate()+d); currentSession[sess]=c.toISOString().slice(0,10); renderSession(sess); }
+
+async function setOC(sess,date,type){
+  await api('setDairyTime',{date,session:sess,type,time:nowTime()});
+  renderSession(sess); notify(type==='open'?'Dairy Open ✓':'Dairy Closed ✓');
+}
+async function setManOC(sess,date){
+  const t=document.getElementById('manT_'+sess)?.value;
+  if(!t){ notify('நேரம் select பண்ணுங்க','var(--amber)'); return; }
+  const times = dairyTimeCache[date+'-'+sess]||{open:null,close:null};
+  const type = times.open?'close':'open';
+  await api('setDairyTime',{date,session:sess,type,time:t});
+  renderSession(sess); notify('நேரம் save ஆனது ✓');
+}
+
+// ═══════════════════════════════════════════════════════════
+// VEHICLE MODAL
+// ═══════════════════════════════════════════════════════════
+function openAdd(sess,date){
+  editVehId=null; editVehSess=sess; editVehDate=date;
+  clearVehModal();
+  populateModalDropdowns();
+  document.getElementById('vehModalTitle').textContent='New Vehicle — '+date;
+  document.getElementById('vehModal').classList.add('show');
+}
+function openEdit(sess,date,id){
+  editVehId=id; editVehSess=sess; editVehDate=date;
+  const v=(vehicleCache[date+'-'+sess]||[]).find(x=>x.id===id);
+  if(!v) return;
+  populateModalDropdowns();
+  // Set saved values — if not in master list, add temporarily
+  const nameEl=document.getElementById('m_name');
+  if(v.name && !Array.from(nameEl.options).find(o=>o.value===v.name)){
+    const opt=document.createElement('option'); opt.value=v.name; opt.textContent=v.name+'(saved)'; nameEl.appendChild(opt);
+  }
+  nameEl.value=v.name||'';
+  const noEl=document.getElementById('m_no');
+  if(v.no && !Array.from(noEl.options).find(o=>o.value===v.no)){
+    const opt=document.createElement('option'); opt.value=v.no; opt.textContent=v.no+' (saved)'; noEl.appendChild(opt);
+  }
+  noEl.value=v.no||'';
+  document.getElementById('m_exp').value=v.expected||'';
+  document.getElementById('m_in').value=v.timeIn||'';
+  document.getElementById('m_out').value=v.timeOut||'';
+  document.getElementById('m_milk').value=v.milk||'';
+  document.getElementById('m_spoil').value=v.spoil||'';
+  document.getElementById('m_status').value=v.status||'normal';
+  document.getElementById('m_spare_name').value=v.spare_name||'';
+  document.getElementById('m_spare_no').value=v.spare_no||'';
+  document.getElementById('m_notes').value=v.notes||'';
+  document.getElementById('m_id').value=id;
+  toggleSpare();
+  document.getElementById('vehModalTitle').textContent='Edit Vehicle';
+  document.getElementById('vehModal').classList.add('show');
+}
+function closeVehModal(){ document.getElementById('vehModal').classList.remove('show'); }
+function clearVehModal(){
+  ['m_exp','m_in','m_out','m_milk','m_spoil','m_spare_name','m_spare_no','m_notes','m_id'].forEach(id=>{ document.getElementById(id).value=''; });
+  const nameEl=document.getElementById('m_name'); if(nameEl) nameEl.selectedIndex=0;
+  const noEl=document.getElementById('m_no'); if(noEl) noEl.selectedIndex=0;
+  document.getElementById('m_status').value='normal';
+  document.getElementById('spareFields').classList.add('hidden');
+}
+function toggleSpare(){ const v=document.getElementById('m_status').value; document.getElementById('spareFields').classList.toggle('hidden',v!=='spare'&&v!=='fault'); }
+function markNow(){ document.getElementById('m_in').value=nowTime(); }
+async function saveVehicle(){
+  const btn=document.getElementById('saveVehBtn');
+  btn.disabled=true; btn.innerHTML='<span class="loading"></span>Saving...';
+  document.getElementById('vehSyncNote').classList.remove('hidden');
+  const vehicle={
+    id: document.getElementById('m_id').value||null,
+    name:document.getElementById('m_name').value.trim(),
+    no:document.getElementById('m_no').value.trim(),
+    expected:document.getElementById('m_exp').value,
+    timeIn:document.getElementById('m_in').value,
+    timeOut:document.getElementById('m_out').value,
+    milk:document.getElementById('m_milk').value,
+    spoil:document.getElementById('m_spoil').value,
+    status:document.getElementById('m_status').value,
+    spare_name:document.getElementById('m_spare_name').value,
+    spare_no:document.getElementById('m_spare_no').value,
+    notes:document.getElementById('m_notes').value,
+  };
+  if(!vehicle.name&&!vehicle.no){ notify('Vehicle பெயர் போடுங்க','var(--amber)'); btn.disabled=false; btn.textContent='💾 Save'; return; }
+  try {
+    await api('saveVehicle',{vehicle,date:editVehDate,session:editVehSess,savedBy:currentUser?.name||'Unknown'});
+    closeVehModal();
+    await renderSession(editVehSess);
+    notify('Saved to Cloud ✓');
+  } catch(e){ notify('Save failed: '+e.message,'var(--red)'); }
+  btn.disabled=false; btn.textContent='💾 Save';
+  document.getElementById('vehSyncNote').classList.add('hidden');
+}
+async function delVeh(id,sess,date){
+  if(!confirm('Delete this vehicle record?')) return;
+  await api('deleteVehicle',{id});
+  await renderSession(sess); notify('Deleted ✓');
+}
+document.getElementById('vehModal').addEventListener('click',function(e){ if(e.target===this)closeVehModal(); });
+
+// ═══════════════════════════════════════════════════════════
+// ATTENDANCE
+// ═══════════════════════════════════════════════════════════
+function prevMonth(){ const m=new Date(document.getElementById('attMonth').value+'-01'); m.setMonth(m.getMonth()-1); document.getElementById('attMonth').value=m.toISOString().slice(0,7); loadAttendance(); }
+function nextMonth(){ const m=new Date(document.getElementById('attMonth').value+'-01'); m.setMonth(m.getMonth()+1); document.getElementById('attMonth').value=m.toISOString().slice(0,7); loadAttendance(); }
+
+async function addStaff(){
+  const name=document.getElementById('newStaffName').value.trim();
+  if(!name){ notify('பெயர் போடுங்க','var(--amber)'); return; }
+  await api('addStaff',{name});
+  staffList = await api('getStaff',{});
+  document.getElementById('newStaffName').value='';
+  loadAttendance(); notify(name+' added ✓');
+}
+
+async function loadAttendance(){
+  const month=document.getElementById('attMonth').value; if(!month) return;
+  const attData = await api('getAttendance',{month});
+  // rebuild attCache from server data
+  attCache[month]={};
+  attData.forEach(row=>{
+    if(!attCache[month][row.staff]) attCache[month][row.staff]={};
+    attCache[month][row.staff][row.shift]=row.days;
+  });
+  staffList = await api('getStaff',{});
+  renderAttendance();
+}
+
+function renderAttendance(){
+  const month=document.getElementById('attMonth').value; if(!month) return;
+  const [yr,mo]=month.split('-').map(Number);
+  const days=new Date(yr,mo,0).getDate();
+  const label=new Date(yr,mo-1,1).toLocaleDateString('ta-IN',{year:'numeric',month:'long'});
+  document.getElementById('attMonthLabel').textContent=label;
+  const mData=attCache[month]||{};
+  const isManager=currentUser&&currentUser.role==='manager';
+  const staffMgmt=document.getElementById('staffMgmtRow');
+  if(staffMgmt) staffMgmt.style.display=isManager?'flex':'none';
+  const dayNums=Array.from({length:days},(_,i)=>i+1);
+  let html=`<thead><tr>
+    <th class="sty">Staff</th><th class="sty2">Shift</th>
+    ${dayNums.map(d=>`<th>${d}</th>`).join('')}
+    <th>P</th><th>A</th><th>HD</th><th>Shifts</th><th>Salary</th>
+  </tr></thead><tbody>`;
+  staffList.forEach(staff=>{
+    ['morning','evening'].forEach((shift,si)=>{
+      const days_data=(mData[staff]||{})[shift]||{};
+      const pC=Object.values(days_data).filter(v=>v==='P').length;
+      const aC=Object.values(days_data).filter(v=>v==='A').length;
+      const hC=Object.values(days_data).filter(v=>v==='HD').length;
+      const ts=pC+hC*0.5; const sal=ts*100;
+      html+=`<tr>
+        ${si===0?`<td class="sty" rowspan="2" style="vertical-align:middle">${staff}${isManager?`<br><button class="btn btn-ghost btn-sm" style="font-size:10px;margin-top:3px" onclick="removeStaff('${staff}')">🗑</button>`:''}</td>`:''}
+        <td class="sty2"><span class="${shift==='morning'?'shift-m':'shift-e'}">${shift==='morning'?'Morning':'Evening'}</span></td>
+        ${dayNums.map(d=>{
+          const val=days_data[d]||'';
+          return `<td><input class="att-input" maxlength="2" value="${val}"
+            style="color:${val==='P'?'var(--green)':val==='A'?'var(--red)':val==='HD'?'var(--amber)':'var(--text2)'}"
+            ${!isManager&&shift==='morning'&&currentUser&&staff!==currentUser.name?'':''}
+            onchange="setAtt('${month}','${staff}','${shift}',${d},this.value.toUpperCase().trim())"
+            onfocus="this.select()"></td>`;
+        }).join('')}
+        <td style="color:var(--green);font-weight:700">${pC}</td>
+        <td style="color:var(--red)">${aC}</td>
+        <td style="color:var(--amber);font-weight:600">${hC}</td>
+        <td style="color:var(--blue);font-weight:700">${ts}</td>
+        <td style="color:var(--green);font-weight:700">${formatRs(sal)}</td>
+      </tr>`;
+    });
+  });
+  html+='</tbody>';
+  document.getElementById('attTable').innerHTML=html;
+}
+
+async function setAtt(month,staff,shift,day,value){
+  await api('setAttendance',{month,staff,shift,day,value});
+  if(!attCache[month]) attCache[month]={};
+  if(!attCache[month][staff]) attCache[month][staff]={};
+  if(!attCache[month][staff][shift]) attCache[month][staff][shift]={};
+  if(!value) delete attCache[month][staff][shift][day];
+  else attCache[month][staff][shift][day]=value;
+  renderAttendance(); renderSalary();
+}
+
+async function removeStaff(name){
+  if(!confirm('Remove '+name+'?')) return;
+  await api('removeStaff',{name});
+  staffList=staffList.filter(s=>s!==name);
+  renderAttendance(); renderSalary(); notify(name+' removed');
+}
+
+// ═══════════════════════════════════════════════════════════
+// SALARY
+// ═══════════════════════════════════════════════════════════
+function renderSalary(){
+  const month=document.getElementById('salMonth').value; if(!month) return;
+  const mData=attCache[month]||{};
+  let rows=''; let grand=0;
+  staffList.forEach(staff=>{
+    const mDays=(mData[staff]||{})['morning']||{};
+    const eDays=(mData[staff]||{})['evening']||{};
+    const mP=Object.values(mDays).filter(v=>v==='P').length+Object.values(mDays).filter(v=>v==='HD').length*0.5;
+    const eP=Object.values(eDays).filter(v=>v==='P').length+Object.values(eDays).filter(v=>v==='HD').length*0.5;
+    const t=(mP+eP)*100; grand+=t;
+    rows+=`<tr><td><strong>${staff}</strong></td><td style="text-align:center">${mP}</td><td class="money">${formatRs(mP*100)}</td><td style="text-align:center">${eP}</td><td class="money">${formatRs(eP*100)}</td><td style="text-align:center;font-weight:700">${mP+eP}</td><td class="money" style="font-size:15px">${formatRs(t)}</td></tr>`;
+  });
+  document.getElementById('salBody').innerHTML=rows;
+  document.getElementById('salFoot').innerHTML=`<tr class="sal-total"><td colspan="6" style="text-align:right">Grand Total</td><td>${formatRs(grand)}</td></tr>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// PANEL SWITCHING
+// ═══════════════════════════════════════════════════════════
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  const tab=document.querySelector('.main-tab.'+name);
+  if(tab) tab.classList.add('active');
+  if(name==='attend') loadAttendance();
+  if(name==='salary'){ loadAttendance().then(()=>renderSalary()); }
+  if(name==='settings'){ loadMasters(); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// ROUTE MASTER & VEHICLE MASTER — Google Sheets synced
+// ═══════════════════════════════════════════════════════════
+let routeMaster = [];
+let vehMaster = [];
+
+// Load from cloud (with localStorage fallback)
+async function loadMasters(){
+  // First load from localStorage immediately so dropdown works offline too
+  try { routeMaster = JSON.parse(localStorage.getItem('dairy_routes')||'[]'); } catch(e){ routeMaster=[]; }
+  try { vehMaster = JSON.parse(localStorage.getItem('dairy_vehs')||'[]'); } catch(e){ vehMaster=[]; }
+  renderRouteMasterList();
+  renderVehMasterList();
+
+  // Then fetch fresh from Google Sheets in background
+  if(API_URL){
+    try {
+      const tout = ms => new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
+      const [freshRoutes, freshVehs] = await Promise.all([
+        Promise.race([api('getRouteMaster',{}), tout(8000)]),
+        Promise.race([api('getVehMaster',{}), tout(8000)])
+      ]);
+      if(Array.isArray(freshRoutes)){ routeMaster=freshRoutes; localStorage.setItem('dairy_routes',JSON.stringify(routeMaster)); }
+      if(Array.isArray(freshVehs)){ vehMaster=freshVehs; localStorage.setItem('dairy_vehs',JSON.stringify(vehMaster)); }
+      renderRouteMasterList();
+      renderVehMasterList();
+    } catch(e){ /* offline — use cached */ }
+  }
+}
+
+async function addRoute(){
+  const name = document.getElementById('newRouteName').value.trim();
+  if(!name){ notify('Route பெயர் போடுங்க','var(--amber)'); return; }
+  if(routeMaster.includes(name)){ notify('Already இருக்கு!','var(--amber)'); return; }
+  await api('addRoute',{name});
+  routeMaster.push(name);
+  localStorage.setItem('dairy_routes',JSON.stringify(routeMaster));
+  document.getElementById('newRouteName').value='';
+  renderRouteMasterList();
+  notify(name+' route added ✓');
+}
+
+async function removeRouteIdx(i){
+  await api('removeRouteIdx',{idx:i});
+  routeMaster.splice(i,1);
+  localStorage.setItem('dairy_routes',JSON.stringify(routeMaster));
+  renderRouteMasterList();
+  notify('Route removed ✓');
+}
+
+function renderRouteMasterList(){
+  const el = document.getElementById('routeList');
+  if(!el) return;
+  if(!routeMaster.length){ el.innerHTML='<span style="font-size:12px;color:var(--text3)">Route இல்லை — Add பண்ணுங்க</span>'; return; }
+  el.innerHTML = routeMaster.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px">
+      <span style="font-size:13px">🛣️ ${r}</span>
+      <button onclick="removeRouteIdx(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px">×</button>
+    </div>`).join('');
+}
+
+async function addVehMaster(){
+  const no = document.getElementById('newVehNo').value.trim().toUpperCase();
+  if(!no){ notify('Vehicle No போடுங்க','var(--amber)'); return; }
+  if(vehMaster.includes(no)){ notify('Already இருக்கு!','var(--amber)'); return; }
+  await api('addVehMaster',{no});
+  vehMaster.push(no);
+  localStorage.setItem('dairy_vehs',JSON.stringify(vehMaster));
+  document.getElementById('newVehNo').value='';
+  renderVehMasterList();
+  notify(no+' vehicle added ✓');
+}
+
+async function removeVehMasterIdx(i){
+  await api('removeVehMasterIdx',{idx:i});
+  vehMaster.splice(i,1);
+  localStorage.setItem('dairy_vehs',JSON.stringify(vehMaster));
+  renderVehMasterList();
+  notify('Vehicle removed ✓');
+}
+
+function renderVehMasterList(){
+  const el = document.getElementById('vehMasterList');
+  if(!el) return;
+  if(!vehMaster.length){ el.innerHTML='<span style="font-size:12px;color:var(--text3)">Vehicle இல்லை — Add பண்ணுங்க</span>'; return; }
+  el.innerHTML = vehMaster.map((v,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px">
+      <span style="font-size:13px">🚛 ${v}</span>
+      <button onclick="removeVehMasterIdx(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 2px">×</button>
+    </div>`).join('');
+}
+
+function populateModalDropdowns(){
+  const nameEl = document.getElementById('m_name');
+  const noEl = document.getElementById('m_no');
+  // Route dropdown
+  const curName = nameEl.value;
+  nameEl.innerHTML = '<option value="">-- Route Select பண்ணுங்க --</option>';
+  routeMaster.forEach(r=>{
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r;
+    if(r===curName) opt.selected=true;
+    nameEl.appendChild(opt);
+  });
+  // Vehicle No dropdown
+  const curNo = noEl.value;
+  noEl.innerHTML = '<option value="">-- Vehicle No Select பண்ணுங்க --</option>';
+  vehMaster.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    if(v===curNo) opt.selected=true;
+    noEl.appendChild(opt);
+  });
+}
+
+function onRouteSelect(){
+  // Auto-fill vehicle no if only one vehicle master exists and route selected
+  // (User can still change manually)
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function updateUrl(){
+  const url=document.getElementById('settingsUrl').value.trim();
+  API_URL=url; localStorage.setItem('dairy_api_url',url);
+  notify('URL updated ✓');
+}
+async function testConnection(){
+  const res=document.getElementById('connTestResult');
+  res.textContent='Testing...'; res.style.color='var(--amber)';
+  try{
+    const r=await fetch(API_URL+'?action=ping&payload=%7B%7D',{method:'GET'});
+    const d=await r.json();
+    if(d.ok){ res.textContent='✅ Connected to Google Sheets!'; res.style.color='var(--green)'; setSyncStatus('ok'); }
+    else throw new Error();
+  }catch(e){ res.textContent='❌ Failed — URL சரியா? /exec இருக்கா?'; res.style.color='var(--red)'; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// EXCEL EXPORTS
+// ═══════════════════════════════════════════════════════════
+function exportDayXL(sess,date){
+  const vehs=vehicleCache[date+'-'+sess]||[];
+  const times=dairyTimeCache[date+'-'+sess]||{};
+  const rows=[['Date','Session','Open','Close','Vehicle','Number','Expected','IN','OUT','Delay(m)','Milk(L)','Spoil(L)','Net(L)','Status','Notes','By']];
+  vehs.forEach(v=>{ const d=timeDiff(v.expected,v.timeIn); rows.push([date,sess,times.open||'',times.close||'',v.name,v.no,v.expected||'',v.timeIn||'',v.timeOut||'',d!=null?d:'',+v.milk||0,+v.spoil||0,(+v.milk||0)-(+v.spoil||0),v.status,v.notes||'',v.savedBy||'']); });
+  if(!vehs.length) rows.push([date,sess,times.open||'',times.close||'','','','','','','','','','','','','']);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[12,9,8,8,20,14,9,9,9,9,9,9,9,10,24,12].map(w=>({wch:w}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sess+' '+date);
+  XLSX.writeFile(wb,`dairy-${sess}-${date}.xlsx`);
+  notify('Excel download ✓');
+}
+
+async function exportMonthXL(sess,month){
+  const [yr,mo]=month.split('-').map(Number);
+  const days=new Date(yr,mo,0).getDate();
+  const rows=[['Date','Session','Open','Close','Vehicle','Number','Expected','IN','OUT','Delay(m)','Milk(L)','Spoil(L)','Net(L)','Status','Notes','By']];
+  for(let d=1;d<=days;d++){
+    const date=`${yr}-${pad(mo)}-${pad(d)}`;
+    const vehs=await api('getVehicles',{date,session:sess});
+    const times=await api('getDairyTime',{date,session:sess});
+    vehs.forEach(v=>{ const dl=timeDiff(v.expected,v.timeIn); rows.push([date,sess,times.open||'',times.close||'',v.name,v.no,v.expected||'',v.timeIn||'',v.timeOut||'',dl!=null?dl:'',+v.milk||0,+v.spoil||0,(+v.milk||0)-(+v.spoil||0),v.status,v.notes||'',v.savedBy||'']); });
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,sess+' Month');
+  XLSX.writeFile(wb,`dairy-${sess}-${month}.xlsx`);
+  notify('Month Excel download ✓');
+}
+
+function exportAttExcel(){
+  const month=document.getElementById('attMonth').value; if(!month){ notify('Month select பண்ணுங்க','var(--amber)'); return; }
+  const [yr,mo]=month.split('-').map(Number);
+  const days=new Date(yr,mo,0).getDate();
+  const dayNums=Array.from({length:days},(_,i)=>i+1);
+  const mData=attCache[month]||{};
+  const header=['Staff','Shift',...dayNums.map(String),'P','A','HD','Shifts','Salary(Rs)'];
+  const rows=[header];
+  staffList.forEach(staff=>{
+    ['morning','evening'].forEach(shift=>{
+      const d=(mData[staff]||{})[shift]||{};
+      const dv=dayNums.map(day=>d[day]||'');
+      const pC=Object.values(d).filter(v=>v==='P').length;
+      const aC=Object.values(d).filter(v=>v==='A').length;
+      const hC=Object.values(d).filter(v=>v==='HD').length;
+      const ts=pC+hC*0.5;
+      rows.push([staff,shift,...dv,pC,aC,hC,ts,ts*100]);
+    });
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:10},...dayNums.map(()=>({wch:4.5})),{wch:6},{wch:6},{wch:5},{wch:8},{wch:12}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Attendance');
+  XLSX.writeFile(wb,`attendance-${month}.xlsx`);
+  notify('Attendance Excel ✓');
+}
+
+function exportSalExcel(){
+  const month=document.getElementById('salMonth').value; if(!month) return;
+  const mData=attCache[month]||{};
+  const rows=[['Staff','Morning Shifts','Morning Rs','Evening Shifts','Evening Rs','Total Shifts','Total Salary Rs']];
+  let grand=0;
+  staffList.forEach(staff=>{
+    const mD=(mData[staff]||{})['morning']||{};
+    const eD=(mData[staff]||{})['evening']||{};
+    const mS=Object.values(mD).filter(v=>v==='P').length+Object.values(mD).filter(v=>v==='HD').length*0.5;
+    const eS=Object.values(eD).filter(v=>v==='P').length+Object.values(eD).filter(v=>v==='HD').length*0.5;
+    const t=(mS+eS)*100; grand+=t;
+    rows.push([staff,mS,mS*100,eS,eS*100,mS+eS,t]);
+  });
+  rows.push(['GRAND TOTAL','','','','','',grand]);
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:20},{wch:14},{wch:14},{wch:14},{wch:14},{wch:13},{wch:16}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Salary');
+  XLSX.writeFile(wb,`salary-${month}.xlsx`);
+  notify('Salary Excel ✓');
+}
+
+async function exportFullExcel(){
+  const month=document.getElementById('salMonth').value||nowMonth;
+  const [yr,mo]=month.split('-').map(Number);
+  const days=new Date(yr,mo,0).getDate();
+  const wb=XLSX.utils.book_new();
+  notify('Preparing Full Report...','var(--amber)');
+  for(const sess of['morning','evening']){
+    const rows=[['Date','Session','Open','Close','Vehicle','Number','Expected','IN','OUT','Delay(m)','Milk(L)','Spoil(L)','Net(L)','Status','Notes','By']];
+    for(let d=1;d<=days;d++){
+      const date=`${yr}-${pad(mo)}-${pad(d)}`;
+      const vehs=await api('getVehicles',{date,session:sess});
+      const times=await api('getDairyTime',{date,session:sess});
+      vehs.forEach(v=>{ const dl=timeDiff(v.expected,v.timeIn); rows.push([date,sess,times.open||'',times.close||'',v.name,v.no,v.expected||'',v.timeIn||'',v.timeOut||'',dl!=null?dl:'',+v.milk||0,+v.spoil||0,(+v.milk||0)-(+v.spoil||0),v.status,v.notes||'',v.savedBy||'']); });
+    }
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),sess==='morning'?'Morning':'Evening');
+  }
+  exportAttExcelToWB(wb,month);
+  exportSalExcelToWB(wb,month);
+  XLSX.writeFile(wb,`dairy-full-${month}.xlsx`);
+  notify('Full Report Excel ✓');
+}
+
+function exportAttExcelToWB(wb,month){
+  const [yr,mo]=month.split('-').map(Number);
+  const days=new Date(yr,mo,0).getDate();
+  const dayNums=Array.from({length:days},(_,i)=>i+1);
+  const mData=attCache[month]||{};
+  const rows=[['Staff','Shift',...dayNums.map(String),'P','A','HD','Shifts','Salary']];
+  staffList.forEach(staff=>{
+    ['morning','evening'].forEach(shift=>{
+      const d=(mData[staff]||{})[shift]||{};
+      const dv=dayNums.map(day=>d[day]||'');
+      const pC=Object.values(d).filter(v=>v==='P').length;
+      const aC=Object.values(d).filter(v=>v==='A').length;
+      const hC=Object.values(d).filter(v=>v==='HD').length;
+      const ts=pC+hC*0.5;
+      rows.push([staff,shift,...dv,pC,aC,hC,ts,ts*100]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Attendance');
+}
+function exportSalExcelToWB(wb,month){
+  const mData=attCache[month]||{};
+  const rows=[['Staff','Morning Shifts','Morning Rs','Evening Shifts','Evening Rs','Total Shifts','Total Salary']];
+  let grand=0;
+  staffList.forEach(staff=>{
+    const mD=(mData[staff]||{})['morning']||{};
+    const eD=(mData[staff]||{})['evening']||{};
+    const mS=Object.values(mD).filter(v=>v==='P').length+Object.values(mD).filter(v=>v==='HD').length*0.5;
+    const eS=Object.values(eD).filter(v=>v==='P').length+Object.values(eD).filter(v=>v==='HD').length*0.5;
+    const t=(mS+eS)*100; grand+=t;
+    rows.push([staff,mS,mS*100,eS,eS*100,mS+eS,t]);
+  });
+  rows.push(['GRAND TOTAL','','','','','',grand]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Salary');
+}
+
+// Copy script
+function copyScript(){
+  fetch('https://api.anthropic.com/v1/messages').catch(()=>{});
+  const scriptCode = `// DAIRY RMRD Google Apps Script — Paste this in Apps Script editor
+const PASSWORDS={manager:"dairy123",staff:"staff456"};
+function doPost(e){try{const b=JSON.parse(e.postData.contents);const{action,payload}=b;let r;switch(action){case"login":r=login(payload);break;case"saveVehicle":r=saveVehicle(payload);break;case"getVehicles":r=getVehicles(payload);break;case"deleteVehicle":r=deleteVehicle(payload);break;case"setDairyTime":r=setDairyTime(payload);break;case"getDairyTime":r=getDairyTime(payload);break;case"setAttendance":r=setAttendance(payload);break;case"getAttendance":r=getAttendance(payload);break;case"getStaff":r=getStaff();break;case"addStaff":r=addStaff(payload);break;case"removeStaff":r=removeStaff(payload);break;default:r={error:"Unknown"}}return ContentService.createTextOutput(JSON.stringify({ok:true,data:r})).setMimeType(ContentService.MimeType.JSON)}catch(err){return ContentService.createTextOutput(JSON.stringify({ok:false,error:err.message})).setMimeType(ContentService.MimeType.JSON)}}
+function doGet(){return ContentService.createTextOutput(JSON.stringify({ok:true,msg:"Dairy RMRD API Running"})).setMimeType(ContentService.MimeType.JSON)}
+function login({username,password}){if(password===PASSWORDS.manager)return{role:"manager",name:username};if(password===PASSWORDS.staff)return{role:"staff",name:username};throw new Error("தவறான password")}
+function getOrCreate(name){const ss=SpreadsheetApp.getActiveSpreadsheet();let sh=ss.getSheetByName(name);if(!sh)sh=ss.insertSheet(name);return sh}
+function saveVehicle({vehicle,date,session,savedBy}){const sh=getOrCreate("Vehicles");if(sh.getLastRow()===0)sh.appendRow(["id","date","session","name","no","expected","timeIn","timeOut","milk","spoil","status","spare_name","spare_no","notes","savedBy","savedAt"]);const id=vehicle.id||Date.now().toString();if(sh.getLastRow()>1){const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===id){sh.getRange(r+1,1,1,16).setValues([[id,date,session,vehicle.name||"",vehicle.no||"",vehicle.expected||"",vehicle.timeIn||"",vehicle.timeOut||"",Number(vehicle.milk||0),Number(vehicle.spoil||0),vehicle.status||"normal",vehicle.spare_name||"",vehicle.spare_no||"",vehicle.notes||"",savedBy,new Date().toLocaleString("en-IN")]]);return{id}}}}sh.appendRow([id,date,session,vehicle.name||"",vehicle.no||"",vehicle.expected||"",vehicle.timeIn||"",vehicle.timeOut||"",Number(vehicle.milk||0),Number(vehicle.spoil||0),vehicle.status||"normal",vehicle.spare_name||"",vehicle.spare_no||"",vehicle.notes||"",savedBy,new Date().toLocaleString("en-IN")]);return{id}}
+function getVehicles({date,session}){const sh=getOrCreate("Vehicles");if(sh.getLastRow()<=1)return[];const data=sh.getDataRange().getValues();const rows=[];for(let r=1;r<data.length;r++){if(data[r][1]===date&&data[r][2]===session)rows.push({id:data[r][0],date:data[r][1],session:data[r][2],name:data[r][3],no:data[r][4],expected:data[r][5],timeIn:data[r][6],timeOut:data[r][7],milk:data[r][8],spoil:data[r][9],status:data[r][10],spare_name:data[r][11],spare_no:data[r][12],notes:data[r][13],savedBy:data[r][14]})}return rows}
+function deleteVehicle({id}){const sh=getOrCreate("Vehicles");if(sh.getLastRow()<=1)return{deleted:false};const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===id){sh.deleteRow(r+1);return{deleted:true}}}return{deleted:false}}
+function setDairyTime({date,session,type,time}){const sh=getOrCreate("DairyTimes");if(sh.getLastRow()===0)sh.appendRow(["date","session","open","close"]);if(sh.getLastRow()>1){const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===date&&data[r][1]===session){sh.getRange(r+1,type==="open"?3:4).setValue(time);return{saved:true}}}}sh.appendRow([date,session,type==="open"?time:"",type==="close"?time:""]);return{saved:true}}
+function getDairyTime({date,session}){const sh=getOrCreate("DairyTimes");if(sh.getLastRow()<=1)return{open:null,close:null};const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===date&&data[r][1]===session)return{open:data[r][2]||null,close:data[r][3]||null}}return{open:null,close:null}}
+function getStaff(){const sh=getOrCreate("Staff");if(sh.getLastRow()<=1)return["Rajan","Murugan","Selvi","Priya","Kannan"];return sh.getDataRange().getValues().slice(1).map(r=>r[0]).filter(Boolean)}
+function addStaff({name}){const sh=getOrCreate("Staff");if(sh.getLastRow()===0)sh.appendRow(["name","addedAt"]);sh.appendRow([name,new Date().toLocaleString("en-IN")]);return{added:true}}
+function removeStaff({name}){const sh=getOrCreate("Staff");if(sh.getLastRow()<=1)return{removed:false};const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===name){sh.deleteRow(r+1);return{removed:true}}}return{removed:false}}
+function setAttendance({month,staff,shift,day,value}){const sh=getOrCreate("Attendance");if(sh.getLastRow()===0)sh.appendRow(["month","staff","shift","d1","d2","d3","d4","d5","d6","d7","d8","d9","d10","d11","d12","d13","d14","d15","d16","d17","d18","d19","d20","d21","d22","d23","d24","d25","d26","d27","d28","d29","d30","d31","savedAt"]);if(sh.getLastRow()>1){const data=sh.getDataRange().getValues();for(let r=1;r<data.length;r++){if(data[r][0]===month&&data[r][1]===staff&&data[r][2]===shift){sh.getRange(r+1,day+3).setValue(value);sh.getRange(r+1,35).setValue(new Date().toLocaleString("en-IN"));return{saved:true}}}}const row=new Array(35).fill("");row[0]=month;row[1]=staff;row[2]=shift;row[day+2]=value;row[34]=new Date().toLocaleString("en-IN");sh.appendRow(row);return{saved:true}}
+function getAttendance({month}){const sh=getOrCreate("Attendance");if(sh.getLastRow()<=1)return[];const data=sh.getDataRange().getValues();const result=[];for(let r=1;r<data.length;r++){if(data[r][0]===month){const days={};for(let d=1;d<=31;d++){const v=data[r][d+2];if(v)days[d]=v}result.push({staff:data[r][1],shift:data[r][2],days})}}return result}`;
+  navigator.clipboard.writeText(scriptCode).then(()=>{ notify('Script copied! Apps Script-ல் paste பண்ணுங்க ✓'); }).catch(()=>{ notify('Copy failed — manually copy செய்யுங்க','var(--red)'); });
+}
+</script>
+</body>
+</html>
